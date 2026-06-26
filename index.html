@@ -1865,108 +1865,139 @@
         }
 
         // Export Premium PDF Report Structure
-    function exportPremiumPDF() {
-
+       function exportPremiumPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     const oldR = state?.computedResults?.old || {};
     const newR = state?.computedResults?.new || {};
 
+    // ===============================
+    // SAFE NUMBER HANDLER (IMPORTANT)
+    // ===============================
     const safe = (v) => Number(v) || 0;
+
+    // ===============================
+    // FORMAT ONLY FOR OUTSIDE TABLE (NOT INSIDE TABLE)
+    // ===============================
+    const formatPDFCurrency = (val) => {
+        return "Rs. " + safe(val).toLocaleString("en-IN");
+    };
+
+    const rawNumber = (val) => String(safe(val)); // IMPORTANT FIX
 
     // ===============================
     // HEADER
     // ===============================
     doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, 210, 40, "F");
+    doc.rect(0, 0, 210, 42, "F");
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Tax Compare India Report", 14, 18);
+    doc.setFontSize(22);
+    doc.text("Tax Compare India Report", 14, 20);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(
-        `Entity: ${state?.entityType || "N/A"} | Age: ${state?.profileAge || "N/A"}`,
+        `Comprehensive Assessment for ${state.entityType} (Age: ${state.profileAge}) | ${state.residentialStatus}`,
         14,
         28
     );
     doc.text(
-        `FY: ${state?.financialYear || "N/A"} | Status: ${state?.residentialStatus || "N/A"}`,
+        `Financial Year: ${state.financialYear} (Assessment Year: 2027-28)`,
         14,
         34
     );
 
-    doc.setTextColor(0, 0, 0);
+    // ===============================
+    // PROFILE SECTION (SAFE)
+    // ===============================
+    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Assessee Profile Configuration", 14, 52);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    doc.text(`Core Salary Basic Package: ${formatPDFCurrency(state.salBasic)}`, 14, 59);
+    doc.text(`Net Business earnings: ${formatPDFCurrency(oldR.biz)}`, 14, 65);
+    doc.text(`Exempt HRA computed: ${formatPDFCurrency(state.exemptHRA || 0)}`, 14, 71);
+
+    const optRecommendation =
+        newR.payable < oldR.payable
+            ? `OPT NEW REGIME (Savings: ${formatPDFCurrency(oldR.payable - newR.payable)})`
+            : `OPT OLD REGIME`;
+
+    doc.text(`Tax Optimizer Recommendation: ${optRecommendation}`, 110, 59);
+    doc.text(`Total TDS credits: ${formatPDFCurrency(oldR.tds)}`, 110, 65);
 
     // ===============================
-    // IMPORTANT: RAW NUMBERS ONLY (NO FORMATTING)
+    // TABLE HEADERS
+    // ===============================
+    const headers = [["Line Item", "Old Regime", "New Regime"]];
+
+    // ===============================
+    // FIXED TABLE ROWS (IMPORTANT CHANGE)
+    // NO LOCALE STRING INSIDE TABLE
     // ===============================
     const rows = [
-        ["Salary Income", String(safe(oldR.sal)), String(safe(newR.sal))],
-        ["Exemptions", "-" + String(safe(oldR.exempt)), "-" + String(safe(newR.exempt))],
-        ["Standard Deduction", "-" + String(safe(oldR.std)), "-" + String(safe(newR.std))],
-        ["Business Income", String(safe(oldR.biz)), String(safe(newR.biz))],
-        ["House Property", String(safe(oldR.hp)), String(safe(newR.hp))],
-        ["Capital Gains", String(safe(oldR.cg)), String(safe(newR.cg))],
-        ["Other Income", String(safe(oldR.other)), String(safe(newR.other))],
-        ["Gross Total Income", String(safe(oldR.gti)), String(safe(newR.gti))],
-        ["Deductions", "-" + String(safe(oldR.ded)), "-" + String(safe(newR.ded))],
-        ["Taxable Income", String(safe(oldR.nti)), String(safe(newR.nti))],
-        ["Tax Payable", String(safe(oldR.payable)), String(safe(newR.payable))]
+        ["Salary", rawNumber(oldR.sal), rawNumber(newR.sal)],
+        ["Exempt Allowances", "-" + rawNumber(oldR.exempt), "-" + rawNumber(newR.exempt)],
+        ["Standard Deduction", "-" + rawNumber(oldR.std), "-" + rawNumber(newR.std)],
+        ["Business Income", rawNumber(oldR.biz), rawNumber(newR.biz)],
+        ["House Property", rawNumber(oldR.hp), rawNumber(newR.hp)],
+        ["Capital Gains", rawNumber(oldR.cg), rawNumber(newR.cg)],
+        ["Other Income", rawNumber(oldR.other), rawNumber(newR.other)],
+        ["Gross Total Income", rawNumber(oldR.gti), rawNumber(newR.gti)],
+        ["Deductions", "-" + rawNumber(oldR.ded), "-" + rawNumber(newR.ded)],
+        ["Taxable Income", rawNumber(oldR.nti), rawNumber(newR.nti)],
+        ["Base Tax", rawNumber(oldR.baseTax), rawNumber(newR.baseTax)],
+        ["Rebate u/s 87A", "-" + rawNumber(oldR.rebate), "-" + rawNumber(newR.rebate)],
+        ["Surcharge", rawNumber(oldR.surcharge), rawNumber(newR.surcharge)],
+        ["Cess", rawNumber(oldR.cess), rawNumber(newR.cess)],
+        ["Total Tax", rawNumber(oldR.grossTax), rawNumber(newR.grossTax)],
+        ["TDS", "-" + rawNumber(oldR.tds), "-" + rawNumber(newR.tds)],
+        ["Net Payable", rawNumber(oldR.payable), rawNumber(newR.payable)]
     ];
 
-    const headers = [["Particulars", "Old Regime", "New Regime"]];
-
     // ===============================
-    // AUTO TABLE (SAFE)
+    // TABLE
     // ===============================
-    if (typeof doc.autoTable !== "function") {
-        alert("autoTable plugin missing");
-        return;
-    }
-
     doc.autoTable({
         head: headers,
         body: rows,
-        startY: 50,
-        theme: "grid",
-        styles: {
-            fontSize: 8,
-            cellPadding: 2
-        },
-        headStyles: {
-            fillColor: [41, 128, 185],
-            textColor: 255
-        }
+        startY: 78,
+        theme: "striped",
+        headStyles: { fillColor: [49, 46, 129] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        styles: { fontSize: 8, cellPadding: 2.2 }
     });
 
     // ===============================
-    // SUMMARY (FORMATTED ONLY HERE)
+    // FOOTER
     // ===============================
-    let y = doc.lastAutoTable.finalY + 10;
+    const finalY = doc.lastAutoTable.finalY + 12;
 
-    const oldTax = safe(oldR.payable);
-    const newTax = safe(newR.payable);
+    doc.setFillColor(240, 253, 244);
+    doc.rect(14, finalY, 182, 18, "F");
 
-    const formatINR = (n) =>
-        "₹" + Number(n).toLocaleString("en-IN");
-
-    let recommendation =
-        newTax < oldTax
-            ? `NEW REGIME BETTER (Save ${formatINR(oldTax - newTax)})`
-            : `OLD REGIME BETTER (Save ${formatINR(newTax - oldTax)})`;
-
+    doc.setTextColor(21, 128, 61);
     doc.setFont("helvetica", "bold");
-    doc.text("Recommendation:", 14, y);
+    doc.setFontSize(10);
+    doc.text("CA Verification Note:", 18, finalY + 6);
 
     doc.setFont("helvetica", "normal");
-    doc.text(recommendation, 14, y + 6);
+    doc.setFontSize(8);
+    doc.text(
+        "All computations are indicative. Verify IT Act provisions before filing returns.",
+        18,
+        finalY + 12
+    );
 
     // ===============================
     // SAVE
     // ===============================
-    doc.save("Tax-Compare-India-Report.pdf");
+    doc.save(`TaxCompare_India_${state.financialYear}.pdf`);
 }
