@@ -1867,27 +1867,13 @@
         // Export Premium PDF Report Structure
     function exportPremiumPDF() {
 
-    // ===============================
-    // SAFE FORMATTER
-    // ===============================
-    const formatCurrency = (value) => {
-        const num = Number(value);
-        return isNaN(num) ? "0" : num.toLocaleString("en-IN");
-    };
-
-    const safe = (v) => Number(v) || 0;
-
-    // SAFE jsPDF INIT
-    const jsPDF = window.jspdf?.jsPDF;
-    if (!jsPDF) {
-        alert("PDF library not loaded properly");
-        return;
-    }
-
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     const oldR = state?.computedResults?.old || {};
     const newR = state?.computedResults?.new || {};
+
+    const safe = (v) => Number(v) || 0;
 
     // ===============================
     // HEADER
@@ -1916,29 +1902,29 @@
     doc.setTextColor(0, 0, 0);
 
     // ===============================
-    // TABLE DATA
+    // IMPORTANT: RAW NUMBERS ONLY (NO FORMATTING)
     // ===============================
-    const headers = [["Particulars", "Old Regime", "New Regime"]];
-
     const rows = [
-        ["Salary Income", formatCurrency(safe(oldR.sal)), formatCurrency(safe(newR.sal))],
-        ["Exemptions", "-" + formatCurrency(safe(oldR.exempt)), "-" + formatCurrency(safe(newR.exempt))],
-        ["Standard Deduction", "-" + formatCurrency(safe(oldR.std)), "-" + formatCurrency(safe(newR.std))],
-        ["Business Income", formatCurrency(safe(oldR.biz)), formatCurrency(safe(newR.biz))],
-        ["House Property", formatCurrency(safe(oldR.hp)), formatCurrency(safe(newR.hp))],
-        ["Capital Gains", formatCurrency(safe(oldR.cg)), formatCurrency(safe(newR.cg))],
-        ["Other Income", formatCurrency(safe(oldR.other)), formatCurrency(safe(newR.other))],
-        ["Gross Total Income", formatCurrency(safe(oldR.gti)), formatCurrency(safe(newR.gti))],
-        ["Deductions", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
-        ["Taxable Income", formatCurrency(safe(oldR.nti)), formatCurrency(safe(newR.nti))],
-        ["Tax Payable", formatCurrency(safe(oldR.payable)), formatCurrency(safe(newR.payable))]
+        ["Salary Income", String(safe(oldR.sal)), String(safe(newR.sal))],
+        ["Exemptions", "-" + String(safe(oldR.exempt)), "-" + String(safe(newR.exempt))],
+        ["Standard Deduction", "-" + String(safe(oldR.std)), "-" + String(safe(newR.std))],
+        ["Business Income", String(safe(oldR.biz)), String(safe(newR.biz))],
+        ["House Property", String(safe(oldR.hp)), String(safe(newR.hp))],
+        ["Capital Gains", String(safe(oldR.cg)), String(safe(newR.cg))],
+        ["Other Income", String(safe(oldR.other)), String(safe(newR.other))],
+        ["Gross Total Income", String(safe(oldR.gti)), String(safe(newR.gti))],
+        ["Deductions", "-" + String(safe(oldR.ded)), "-" + String(safe(newR.ded))],
+        ["Taxable Income", String(safe(oldR.nti)), String(safe(newR.nti))],
+        ["Tax Payable", String(safe(oldR.payable)), String(safe(newR.payable))]
     ];
 
+    const headers = [["Particulars", "Old Regime", "New Regime"]];
+
     // ===============================
-    // AUTO TABLE CHECK
+    // AUTO TABLE (SAFE)
     // ===============================
     if (typeof doc.autoTable !== "function") {
-        alert("AutoTable plugin missing");
+        alert("autoTable plugin missing");
         return;
     }
 
@@ -1958,17 +1944,20 @@
     });
 
     // ===============================
-    // SUMMARY
+    // SUMMARY (FORMATTED ONLY HERE)
     // ===============================
     let y = doc.lastAutoTable.finalY + 10;
 
     const oldTax = safe(oldR.payable);
     const newTax = safe(newR.payable);
 
+    const formatINR = (n) =>
+        "₹" + Number(n).toLocaleString("en-IN");
+
     let recommendation =
         newTax < oldTax
-            ? `NEW REGIME BETTER (Save ₹${formatCurrency(oldTax - newTax)})`
-            : `OLD REGIME BETTER (Save ₹${formatCurrency(newTax - oldTax)})`;
+            ? `NEW REGIME BETTER (Save ${formatINR(oldTax - newTax)})`
+            : `OLD REGIME BETTER (Save ${formatINR(newTax - oldTax)})`;
 
     doc.setFont("helvetica", "bold");
     doc.text("Recommendation:", 14, y);
