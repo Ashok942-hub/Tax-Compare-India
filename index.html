@@ -1865,22 +1865,18 @@
         }
 
         // Export Premium PDF Report Structure
-        function exportPremiumPDF() {
-            // ===============================
-// SAFE FORMATTER (VERY IMPORTANT)
-// ===============================
-function formatCurrency(value) {
-    const num = Number(value);
-    if (isNaN(num)) return "0";
-    return num.toLocaleString("en-IN");
-}
+      function exportPremiumPDF() {
 
-const safe = (v) => Number(v) || 0;
+    // ===============================
+    // SAFE FORMATTER
+    // ===============================
+    function formatCurrency(value) {
+        const num = Number(value);
+        if (isNaN(num)) return "0";
+        return num.toLocaleString("en-IN");
+    }
 
-// ===============================
-// EXPORT PREMIUM PDF REPORT
-// ===============================
-function exportPremiumPDF() {
+    const safe = (v) => Number(v) || 0;
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -1912,14 +1908,14 @@ function exportPremiumPDF() {
         34
     );
 
-    // ===============================
-    // RESET COLOR
-    // ===============================
     doc.setTextColor(0, 0, 0);
 
-    let headers = [["Particulars", "Old Regime", "New Regime"]];
+    // ===============================
+    // TABLE DATA
+    // ===============================
+    const headers = [["Particulars", "Old Regime", "New Regime"]];
 
-    let rows = [
+    const rows = [
         ["Salary Income", formatCurrency(safe(oldR.sal)), formatCurrency(safe(newR.sal))],
         ["Exemptions", "-" + formatCurrency(safe(oldR.exempt)), "-" + formatCurrency(safe(newR.exempt))],
         ["Standard Deduction", "-" + formatCurrency(safe(oldR.std)), "-" + formatCurrency(safe(newR.std))],
@@ -1928,15 +1924,9 @@ function exportPremiumPDF() {
         ["Capital Gains", formatCurrency(safe(oldR.cg)), formatCurrency(safe(newR.cg))],
         ["Other Income", formatCurrency(safe(oldR.other)), formatCurrency(safe(newR.other))],
         ["Gross Total Income", formatCurrency(safe(oldR.gti)), formatCurrency(safe(newR.gti))],
-        ["Chapter VI-A Deductions", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
+        ["Deductions (80C etc)", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
         ["Taxable Income", formatCurrency(safe(oldR.nti)), formatCurrency(safe(newR.nti))],
-        ["Base Tax", formatCurrency(safe(oldR.baseTax)), formatCurrency(safe(newR.baseTax))],
-        ["Rebate u/s 87A", "-" + formatCurrency(safe(oldR.rebate)), "-" + formatCurrency(safe(newR.rebate))],
-        ["Surcharge", formatCurrency(safe(oldR.surcharge)), formatCurrency(safe(newR.surcharge))],
-        ["Cess (4%)", formatCurrency(safe(oldR.cess)), formatCurrency(safe(newR.cess))],
-        ["Total Tax", formatCurrency(safe(oldR.grossTax)), formatCurrency(safe(newR.grossTax))],
-        ["TDS Credit", "-" + formatCurrency(safe(oldR.tds)), "-" + formatCurrency(safe(newR.tds))],
-        ["Final Payable", formatCurrency(safe(oldR.payable)), formatCurrency(safe(newR.payable))]
+        ["Tax Payable", formatCurrency(safe(oldR.payable)), formatCurrency(safe(newR.payable))]
     ];
 
     // ===============================
@@ -1958,9 +1948,9 @@ function exportPremiumPDF() {
     });
 
     // ===============================
-    // FOOTER SUMMARY
+    // RESULT SUMMARY
     // ===============================
-    let finalY = doc.lastAutoTable.finalY + 10;
+    let y = doc.lastAutoTable.finalY + 10;
 
     const oldTax = safe(oldR.payable);
     const newTax = safe(newR.payable);
@@ -1971,11 +1961,10 @@ function exportPremiumPDF() {
             : `OLD REGIME BETTER (Save ₹${formatCurrency(newTax - oldTax)})`;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Recommendation:", 14, finalY);
+    doc.text("Recommendation:", 14, y);
 
     doc.setFont("helvetica", "normal");
-    doc.text(recommendation, 14, finalY + 6);
+    doc.text(recommendation, 14, y + 6);
 
     // ===============================
     // SAVE
