@@ -1865,20 +1865,25 @@
         }
 
         // Export Premium PDF Report Structure
-      function exportPremiumPDF() {
+    function exportPremiumPDF() {
 
     // ===============================
     // SAFE FORMATTER
     // ===============================
-    function formatCurrency(value) {
+    const formatCurrency = (value) => {
         const num = Number(value);
-        if (isNaN(num)) return "0";
-        return num.toLocaleString("en-IN");
-    }
+        return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+    };
 
     const safe = (v) => Number(v) || 0;
 
-    const { jsPDF } = window.jspdf;
+    // SAFE jsPDF INIT
+    const jsPDF = window.jspdf?.jsPDF;
+    if (!jsPDF) {
+        alert("PDF library not loaded properly");
+        return;
+    }
+
     const doc = new jsPDF();
 
     const oldR = state?.computedResults?.old || {};
@@ -1898,12 +1903,12 @@
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text(
-        `Entity: ${state.entityType || "N/A"} | Age: ${state.profileAge || "N/A"}`,
+        `Entity: ${state?.entityType || "N/A"} | Age: ${state?.profileAge || "N/A"}`,
         14,
         28
     );
     doc.text(
-        `FY: ${state.financialYear || "N/A"} | Status: ${state.residentialStatus || "N/A"}`,
+        `FY: ${state?.financialYear || "N/A"} | Status: ${state?.residentialStatus || "N/A"}`,
         14,
         34
     );
@@ -1924,14 +1929,19 @@
         ["Capital Gains", formatCurrency(safe(oldR.cg)), formatCurrency(safe(newR.cg))],
         ["Other Income", formatCurrency(safe(oldR.other)), formatCurrency(safe(newR.other))],
         ["Gross Total Income", formatCurrency(safe(oldR.gti)), formatCurrency(safe(newR.gti))],
-        ["Deductions (80C etc)", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
+        ["Deductions", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
         ["Taxable Income", formatCurrency(safe(oldR.nti)), formatCurrency(safe(newR.nti))],
         ["Tax Payable", formatCurrency(safe(oldR.payable)), formatCurrency(safe(newR.payable))]
     ];
 
     // ===============================
-    // TABLE
+    // AUTO TABLE CHECK
     // ===============================
+    if (typeof doc.autoTable !== "function") {
+        alert("AutoTable plugin missing");
+        return;
+    }
+
     doc.autoTable({
         head: headers,
         body: rows,
@@ -1948,7 +1958,7 @@
     });
 
     // ===============================
-    // RESULT SUMMARY
+    // SUMMARY
     // ===============================
     let y = doc.lastAutoTable.finalY + 10;
 
