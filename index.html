@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <!-- Google Font (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -1440,6 +1440,10 @@
 
         // CORE SYSTEM TAX ENGINE COMPUTATION CALCULATION
         function runTaxCalculations() {
+            // Ensure pre-computations are synchronized
+            calculateExemptHRA();
+            calculatePLNetProfit();
+            calculatePresumptiveNet();
             readInputs();
 
             // Total dynamic Salary
@@ -1939,8 +1943,16 @@
                 styles: { fontSize: 8, cellPadding: 2.2 }
             });
 
-            // Auditor Verification Seal Box
-            const finalY = doc.lastAutoTable.finalY + 12;
+            // Auditor Verification Seal Box - Robust coordinate tracking with fallback
+            let finalY = 150;
+            if (doc.lastAutoTable && doc.lastAutoTable.finalY) {
+                finalY = doc.lastAutoTable.finalY + 12;
+            } else if (doc.previousAutoTable && doc.previousAutoTable.finalY) {
+                finalY = doc.previousAutoTable.finalY + 12;
+            } else if (doc.autoTable && doc.autoTable.previous && doc.autoTable.previous.finalY) {
+                finalY = doc.autoTable.previous.finalY + 12;
+            }
+
             doc.setFillColor(240, 253, 244);
             doc.rect(14, finalY, 182, 18, 'F');
             doc.setTextColor(21, 128, 61);
