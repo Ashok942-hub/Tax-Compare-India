@@ -1871,6 +1871,11 @@
             const oldR = state.computedResults.old;
             const newR = state.computedResults.new;
 
+            // Define PDF-safe currency formatter to prevent unicode character rendering issues with standard fonts
+            const formatPDFCurrency = (val) => {
+                return 'Rs. ' + Math.round(val).toLocaleString('en-IN');
+            };
+
             // Cover Corporate Panel Branding
             doc.setFillColor(15, 23, 42); // slate-900 color
             doc.rect(0, 0, 210, 42, 'F');
@@ -1893,35 +1898,35 @@
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
-            doc.text(`Core Salary Basic Package: ${formatCurrency(state.salBasic)}`, 14, 59);
-            doc.text(`Net Business earnings: ${formatCurrency(oldR.biz)}`, 14, 65);
-            doc.text(`Exempt HRA computed: ${formatCurrency(state.exemptHRA || 0)}`, 14, 71);
+            doc.text(`Core Salary Basic Package: ${formatPDFCurrency(state.salBasic)}`, 14, 59);
+            doc.text(`Net Business earnings: ${formatPDFCurrency(oldR.biz)}`, 14, 65);
+            doc.text(`Exempt HRA computed: ${formatPDFCurrency(state.exemptHRA || 0)}`, 14, 71);
 
-            const optRecommendation = (newR.payable < oldR.payable) ? `OPT NEW REGIME (Potential Savings: ${formatCurrency(oldR.payable - newR.payable)})` : `OPT OLD REGIME`;
+            const optRecommendation = (newR.payable < oldR.payable) ? `OPT NEW REGIME (Potential Savings: ${formatPDFCurrency(oldR.payable - newR.payable)})` : `OPT OLD REGIME`;
             doc.text(`Tax Optimizer Recommendation: ${optRecommendation}`, 110, 59);
-            doc.text(`Total claimed TDS credits: ${formatCurrency(oldR.tds)}`, 110, 65);
+            doc.text(`Total claimed TDS credits: ${formatPDFCurrency(oldR.tds)}`, 110, 65);
 
             // Detailed Old vs New PDF Table
             const headers = [["Line Item Parameters", "Old Tax Regime (INR)", "New Tax Regime u/s 115BAC (INR)"]];
             const rows = [
-                ["Gross Salaried Subtotals", formatCurrency(oldR.sal), formatCurrency(newR.sal)],
-                ["Exempt Allowances (HRA/LTA)", '-' + formatCurrency(oldR.exempt), '-' + formatCurrency(newR.exempt)],
-                ["Standard Deductions u/s 16(ia)", '-' + formatCurrency(oldR.std), '-' + formatCurrency(newR.std)],
-                ["Net Business Incomes", formatCurrency(oldR.biz), formatCurrency(newR.biz)],
-                ["Net House Property Profits", formatCurrency(oldR.hp), formatCurrency(newR.hp)],
-                ["Exempt Capital Gains", formatCurrency(oldR.cg), formatCurrency(newR.cg)],
-                ["Other Sources Earnings", formatCurrency(oldR.other), formatCurrency(newR.other)],
-                ["Gross Total Income (GTI)", formatCurrency(oldR.gti), formatCurrency(newR.gti)],
-                ["Chapter VI-A Deductions", '-' + formatCurrency(oldR.ded), '-' + formatCurrency(newR.ded)],
-                ["Net Taxable Income (NTI)", formatCurrency(oldR.nti), formatCurrency(newR.nti)],
-                ["Slab Computed Taxes", formatCurrency(oldR.baseTax), formatCurrency(newR.baseTax)],
-                ["Section 87A Rebates", '-' + formatCurrency(oldR.rebate), '-' + formatCurrency(newR.rebate)],
-                ["Marginal Relief Allowance", '-' + formatCurrency(oldR.mrelief), '-' + formatCurrency(newR.mrelief)],
-                ["Surcharges Applicable", formatCurrency(oldR.surcharge), formatCurrency(newR.surcharge)],
-                ["Cess Taxes (4%)", formatCurrency(oldR.cess), formatCurrency(newR.cess)],
-                ["Gross Slabs Tax", formatCurrency(oldR.grossTax), formatCurrency(newR.grossTax)],
-                ["TDS Credits Deduction", '-' + formatCurrency(oldR.tds), '-' + formatCurrency(newR.tds)],
-                ["Net Inward Tax Payable", formatCurrency(oldR.payable), formatCurrency(newR.payable)]
+                ["Gross Salaried Subtotals", formatPDFCurrency(oldR.sal), formatPDFCurrency(newR.sal)],
+                ["Exempt Allowances (HRA/LTA)", '-' + formatPDFCurrency(oldR.exempt), '-' + formatPDFCurrency(newR.exempt)],
+                ["Standard Deductions u/s 16(ia)", '-' + formatPDFCurrency(oldR.std), '-' + formatPDFCurrency(newR.std)],
+                ["Net Business Incomes", formatPDFCurrency(oldR.biz), formatPDFCurrency(newR.biz)],
+                ["Net House Property Profits", formatPDFCurrency(oldR.hp), formatPDFCurrency(newR.hp)],
+                ["Exempt Capital Gains", formatPDFCurrency(oldR.cg), formatPDFCurrency(newR.cg)],
+                ["Other Sources Earnings", formatPDFCurrency(oldR.other), formatPDFCurrency(newR.other)],
+                ["Gross Total Income (GTI)", formatPDFCurrency(oldR.gti), formatPDFCurrency(newR.gti)],
+                ["Chapter VI-A Deductions", '-' + formatPDFCurrency(oldR.ded), '-' + formatPDFCurrency(newR.ded)],
+                ["Net Taxable Income (NTI)", formatPDFCurrency(oldR.nti), formatPDFCurrency(newR.nti)],
+                ["Slab Computed Taxes", formatPDFCurrency(oldR.baseTax), formatPDFCurrency(newR.baseTax)],
+                ["Section 87A Rebates", '-' + formatPDFCurrency(oldR.rebate), '-' + formatPDFCurrency(newR.rebate)],
+                ["Marginal Relief Allowance", '-' + formatPDFCurrency(oldR.mrelief), '-' + formatPDFCurrency(newR.mrelief)],
+                ["Surcharges Applicable", formatPDFCurrency(oldR.surcharge), formatPDFCurrency(newR.surcharge)],
+                ["Cess Taxes (4%)", formatPDFCurrency(oldR.cess), formatPDFCurrency(newR.cess)],
+                ["Gross Slabs Tax", formatPDFCurrency(oldR.grossTax), formatPDFCurrency(newR.grossTax)],
+                ["TDS Credits Deduction", '-' + formatPDFCurrency(oldR.tds), '-' + formatPDFCurrency(newR.tds)],
+                ["Net Inward Tax Payable", formatPDFCurrency(oldR.payable), formatPDFCurrency(newR.payable)]
             ];
 
             doc.autoTable({
