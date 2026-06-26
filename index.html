@@ -1866,98 +1866,119 @@
 
         // Export Premium PDF Report Structure
         function exportPremiumPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const oldR = state.computedResults.old;
-            const newR = state.computedResults.new;
+            // ===============================
+// SAFE FORMATTER (VERY IMPORTANT)
+// ===============================
+function formatCurrency(value) {
+    const num = Number(value);
+    if (isNaN(num)) return "0";
+    return num.toLocaleString("en-IN");
+}
 
-            // Define PDF-safe currency formatter to prevent unicode character rendering issues with standard fonts
-            const formatPDFCurrency = (val) => {
-                return 'Rs. ' + Math.round(val).toLocaleString('en-IN');
-            };
+const safe = (v) => Number(v) || 0;
 
-            // Cover Corporate Panel Branding
-            doc.setFillColor(15, 23, 42); // slate-900 color
-            doc.rect(0, 0, 210, 42, 'F');
+// ===============================
+// EXPORT PREMIUM PDF REPORT
+// ===============================
+function exportPremiumPDF() {
 
-            doc.setTextColor(255, 255, 255);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(22);
-            doc.text("Tax Compare India Report", 14, 20);
-            
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Comprehensive Assessment for ${state.entityType} (Age: ${state.profileAge}) | ${state.residentialStatus}`, 14, 28);
-            doc.text(`Financial Year: ${state.financialYear} (Assessment Year: 2027-28)`, 14, 34);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-            // Audit Parameter Details
-            doc.setTextColor(51, 65, 85);
-            doc.setFontSize(11);
-            doc.setFont("helvetica", "bold");
-            doc.text("Assessee Profile Configuration", 14, 52);
+    const oldR = state?.computedResults?.old || {};
+    const newR = state?.computedResults?.new || {};
 
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
-            doc.text(`Core Salary Basic Package: ${formatPDFCurrency(state.salBasic)}`, 14, 59);
-            doc.text(`Net Business earnings: ${formatPDFCurrency(oldR.biz)}`, 14, 65);
-            doc.text(`Exempt HRA computed: ${formatPDFCurrency(state.exemptHRA || 0)}`, 14, 71);
+    // ===============================
+    // HEADER
+    // ===============================
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 40, "F");
 
-            const optRecommendation = (newR.payable < oldR.payable) ? `OPT NEW REGIME (Potential Savings: ${formatPDFCurrency(oldR.payable - newR.payable)})` : `OPT OLD REGIME`;
-            doc.text(`Tax Optimizer Recommendation: ${optRecommendation}`, 110, 59);
-            doc.text(`Total claimed TDS credits: ${formatPDFCurrency(oldR.tds)}`, 110, 65);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Tax Compare India Report", 14, 18);
 
-            // Detailed Old vs New PDF Table
-            const headers = [["Line Item Parameters", "Old Tax Regime (INR)", "New Tax Regime u/s 115BAC (INR)"]];
-            const rows = [
-                ["Gross Salaried Subtotals", formatPDFCurrency(oldR.sal), formatPDFCurrency(newR.sal)],
-                ["Exempt Allowances (HRA/LTA)", '-' + formatPDFCurrency(oldR.exempt), '-' + formatPDFCurrency(newR.exempt)],
-                ["Standard Deductions u/s 16(ia)", '-' + formatPDFCurrency(oldR.std), '-' + formatPDFCurrency(newR.std)],
-                ["Net Business Incomes", formatPDFCurrency(oldR.biz), formatPDFCurrency(newR.biz)],
-                ["Net House Property Profits", formatPDFCurrency(oldR.hp), formatPDFCurrency(newR.hp)],
-                ["Exempt Capital Gains", formatPDFCurrency(oldR.cg), formatPDFCurrency(newR.cg)],
-                ["Other Sources Earnings", formatPDFCurrency(oldR.other), formatPDFCurrency(newR.other)],
-                ["Gross Total Income (GTI)", formatPDFCurrency(oldR.gti), formatPDFCurrency(newR.gti)],
-                ["Chapter VI-A Deductions", '-' + formatPDFCurrency(oldR.ded), '-' + formatPDFCurrency(newR.ded)],
-                ["Net Taxable Income (NTI)", formatPDFCurrency(oldR.nti), formatPDFCurrency(newR.nti)],
-                ["Slab Computed Taxes", formatPDFCurrency(oldR.baseTax), formatPDFCurrency(newR.baseTax)],
-                ["Section 87A Rebates", '-' + formatPDFCurrency(oldR.rebate), '-' + formatPDFCurrency(newR.rebate)],
-                ["Marginal Relief Allowance", '-' + formatPDFCurrency(oldR.mrelief), '-' + formatPDFCurrency(newR.mrelief)],
-                ["Surcharges Applicable", formatPDFCurrency(oldR.surcharge), formatPDFCurrency(newR.surcharge)],
-                ["Cess Taxes (4%)", formatPDFCurrency(oldR.cess), formatPDFCurrency(newR.cess)],
-                ["Gross Slabs Tax", formatPDFCurrency(oldR.grossTax), formatPDFCurrency(newR.grossTax)],
-                ["TDS Credits Deduction", '-' + formatPDFCurrency(oldR.tds), '-' + formatPDFCurrency(newR.tds)],
-                ["Net Inward Tax Payable", formatPDFCurrency(oldR.payable), formatPDFCurrency(newR.payable)]
-            ];
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+        `Entity: ${state.entityType || "N/A"} | Age: ${state.profileAge || "N/A"}`,
+        14,
+        28
+    );
+    doc.text(
+        `FY: ${state.financialYear || "N/A"} | Status: ${state.residentialStatus || "N/A"}`,
+        14,
+        34
+    );
 
-            doc.autoTable({
-                head: headers,
-                body: rows,
-                startY: 78,
-                theme: 'striped',
-                headStyles: { fillColor: [49, 46, 129] }, // indigo slate
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                styles: { fontSize: 8, cellPadding: 2.2 }
-            });
+    // ===============================
+    // RESET COLOR
+    // ===============================
+    doc.setTextColor(0, 0, 0);
 
-            // Auditor Verification Seal Box
-            const finalY = doc.lastAutoTable.finalY + 12;
-            doc.setFillColor(240, 253, 244);
-            doc.rect(14, finalY, 182, 18, 'F');
-            doc.setTextColor(21, 128, 61);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(10);
-            doc.text("CA Verification Note:", 18, finalY + 6);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(8);
-            doc.text("All computations match standard IT statutory limits. Report is ready for compliance review and return filings.", 18, finalY + 12);
+    let headers = [["Particulars", "Old Regime", "New Regime"]];
 
-            // Audit Disclaimer Notes
-            doc.setTextColor(148, 163, 184);
-            doc.setFontSize(7);
-            doc.text("Disclaimer: Calculated output parameters are indicative estimates based on input coordinates. Verify standard statutory rules before returns filings.", 14, 285);
+    let rows = [
+        ["Salary Income", formatCurrency(safe(oldR.sal)), formatCurrency(safe(newR.sal))],
+        ["Exemptions", "-" + formatCurrency(safe(oldR.exempt)), "-" + formatCurrency(safe(newR.exempt))],
+        ["Standard Deduction", "-" + formatCurrency(safe(oldR.std)), "-" + formatCurrency(safe(newR.std))],
+        ["Business Income", formatCurrency(safe(oldR.biz)), formatCurrency(safe(newR.biz))],
+        ["House Property", formatCurrency(safe(oldR.hp)), formatCurrency(safe(newR.hp))],
+        ["Capital Gains", formatCurrency(safe(oldR.cg)), formatCurrency(safe(newR.cg))],
+        ["Other Income", formatCurrency(safe(oldR.other)), formatCurrency(safe(newR.other))],
+        ["Gross Total Income", formatCurrency(safe(oldR.gti)), formatCurrency(safe(newR.gti))],
+        ["Chapter VI-A Deductions", "-" + formatCurrency(safe(oldR.ded)), "-" + formatCurrency(safe(newR.ded))],
+        ["Taxable Income", formatCurrency(safe(oldR.nti)), formatCurrency(safe(newR.nti))],
+        ["Base Tax", formatCurrency(safe(oldR.baseTax)), formatCurrency(safe(newR.baseTax))],
+        ["Rebate u/s 87A", "-" + formatCurrency(safe(oldR.rebate)), "-" + formatCurrency(safe(newR.rebate))],
+        ["Surcharge", formatCurrency(safe(oldR.surcharge)), formatCurrency(safe(newR.surcharge))],
+        ["Cess (4%)", formatCurrency(safe(oldR.cess)), formatCurrency(safe(newR.cess))],
+        ["Total Tax", formatCurrency(safe(oldR.grossTax)), formatCurrency(safe(newR.grossTax))],
+        ["TDS Credit", "-" + formatCurrency(safe(oldR.tds)), "-" + formatCurrency(safe(newR.tds))],
+        ["Final Payable", formatCurrency(safe(oldR.payable)), formatCurrency(safe(newR.payable))]
+    ];
 
-            doc.save(`TaxCompare_India_Report_${state.financialYear}.pdf`);
+    // ===============================
+    // TABLE
+    // ===============================
+    doc.autoTable({
+        head: headers,
+        body: rows,
+        startY: 50,
+        theme: "grid",
+        styles: {
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: 255
         }
-    </script>
-</body>
-</html>
+    });
+
+    // ===============================
+    // FOOTER SUMMARY
+    // ===============================
+    let finalY = doc.lastAutoTable.finalY + 10;
+
+    const oldTax = safe(oldR.payable);
+    const newTax = safe(newR.payable);
+
+    let recommendation =
+        newTax < oldTax
+            ? `NEW REGIME BETTER (Save ₹${formatCurrency(oldTax - newTax)})`
+            : `OLD REGIME BETTER (Save ₹${formatCurrency(newTax - oldTax)})`;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Recommendation:", 14, finalY);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(recommendation, 14, finalY + 6);
+
+    // ===============================
+    // SAVE
+    // ===============================
+    doc.save("Tax-Compare-India-Report.pdf");
+}
